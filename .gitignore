@@ -1,0 +1,5 @@
+# Ignore specific file
+.env
+
+# Ignore all files with .log extension
+*.log

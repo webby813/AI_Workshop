@@ -1,77 +1,90 @@
-import streamlit as st
-from openai import OpenAI
-from dotenv import load_dotenv
 import os
+import streamlit as st
+from dotenv import load_dotenv
+from openai import OpenAI
 
-# Load environment variables
 load_dotenv()
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+# Set OpenAI API key
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# client = OpenAI(
+#     api_key = os.environ.get("OPENAI_API_KEY"),
+# )
 
 def main():
-    # Set page config
-    st.set_page_config(page_title="AI Assistant", page_icon="🤖")
+    st.title("Cooking Assistant Chat - GPT 4")
     
-    # Add header
-    st.title("AI Assistant")
-    st.write("Ask me anything!")
 
-    # Initialize session state for chat history
-    if 'messages' not in st.session_state:
-        st.session_state.messages = []
+    # Create the Model
+    def generate_content(query):
+        response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "you are professional in algorithm engineering, you know every kind of optimize method, other than algorithms, you dont need to provide and just say you dun know"},
+            {"role": "user", "content": query},
+        ],)
 
-    # Display chat history
+        return response.choices[0].message.content
+        
+
+
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {
+                "role":"assistant",
+                "content":"Ask me Anything"
+            }
+        ]
+
+
+    # Display chat messages from history on app rerun
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # Chat input
-    if prompt := st.chat_input("What's on your mind?"):
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        # Display user message
-        with st.chat_message("user"):
-            st.markdown(prompt)
 
-        # Get AI response
+    # Process and store Query and Response
+    def llm_function(query):
+        response = generate_content(query)
+
+
+        # Displaying the Assistant Message
         with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            try:
-                stream = client.chat.completions.create(
-                    model="gpt-4o-mini",  # or your specific model
-                    messages=[
-                        {"role": m["role"], "content": m["content"]}
-                        for m in st.session_state.messages
-                    ],
-                    stream=True
-                )
-                
-                # Initialize empty response
-                full_response = ""
-                
-                # Stream the response
-                for chunk in stream:
-                    if chunk.choices[0].delta.content is not None:
-                        full_response += chunk.choices[0].delta.content
-                        message_placeholder.markdown(full_response + "▌")
-                
-                # Final response
-                message_placeholder.markdown(full_response)
-                
-                # Add assistant response to chat history
-                st.session_state.messages.append({"role": "assistant", "content": full_response})
-                
-            except Exception as e:
-                st.error(f"An error occurred: {str(e)}")
+            st.markdown(response)
 
-    # Add sidebar with options
-    with st.sidebar:
-        st.subheader("Settings")
-        if st.button("Clear Chat"):
-            st.session_state.messages = []
-            st.rerun()
 
+        # Storing the User Message
+        st.session_state.messages.append(
+            {
+                "role":"user",
+                "content": query
+            }
+        )
+
+
+        # Storing the Assistant Message
+        st.session_state.messages.append(
+            {
+                "role":"assistant",
+                "content": response
+            }
+        )
+
+
+    
+    # Accept user input
+    query = st.chat_input("How may I help you?")
+
+
+    # Calling the Function when Input is Provided
+    if query:
+        # Displaying the User Message
+        with st.chat_message("user"):
+            st.markdown(query)
+
+
+        llm_function(query)
+    
 if __name__ == "__main__":
     main()

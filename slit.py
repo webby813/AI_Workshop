@@ -2,11 +2,12 @@ import streamlit as st
 from openai import OpenAI
 
 def main():
+    st.sidebar.header("Settings")
     # Add input for the user's API key at the top
-    api_key = st.text_input("Enter your OpenAI API Key:", type="password")
+    api_key = st.sidebar.text_input("Enter your OpenAI API Key:", type="password")
     
     st.title("Cooking Assistant Chat - GPT 4")
-    
+
     # Define the function to generate content with the user-provided API key
     def generate_content(query):
         # Ensure the user has provided an API key
